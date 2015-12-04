@@ -3,9 +3,7 @@ require 'io/console'
 
 
 #create an enum to track the status of the game
-class GAME < ActiveRecord::Base
-  Enum status: [:MENU,:SPLASH,:INGAME ]
-end
+
 
 #declare variables and constants
 arrRowCount=0
@@ -15,6 +13,7 @@ arrGame = Array[10][10]
 
 #create the splash screen
 def makeSplash
+  clearScreen
   splash = ConsoleSplash.new(15,70)
   splash.write_header("Welcome to Sokoban","Ben Cornforth","Alpha Build, November 2015")
   splash.write_horizontal_pattern("/*")
@@ -41,34 +40,51 @@ def clearScreen
 end
 #create a menu method to open up upon being called
 def menuScreen
-
+  clearScreen
   puts "You are at the menu for Sokoban \n"
   puts "To play: press 'p'\n"
-  puts "To go back to the splash screen: press 'b'"
-  charPressed
+  puts "To go back to the splash screen: press 'q'"
+  charPressedInMenu
 end
-def charPressed
+def charPressedInGame
+  char = pressKey
+  case (char)
+    when "\e[A"
+      #move down
+    when "\e[B"
+      #move up
+    when "\e[C"
+      #move right
+    when "\e[D"
+      #move left
+    when "q"
+      #quit
+  end
+
+end
+def charPressedInMenu
   char = pressKey
   case (char)
     when "p"
-      return "p"
+      #move down
     when "q"
-      return "q"
+      #move up
   end
 end
+
 def toGame
+  clearScreen
   #print out the first level
   puts "\n"
   File.open("./levels/level1.xsb", "r") do |f|
     f.each_line do |line|
-      puts line
       print line
     end
   end
 end
 #<-----------THE USER WILL BEGIN INTERACTING HERE---------->
 makeSplash
-if charPressed =="p"
+if charPressed !=""
   menuScreen
 end
 
