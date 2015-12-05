@@ -41,9 +41,9 @@ end
 def menuScreen
   clearScreen
   puts "You are at the menu for Sokoban \n"
-  puts "    To quick play: press 'p'\n"
-  puts "To choose a level: press 'c'\n"
-  puts "          To stop: press 'q'"
+  puts "    To quick play: press p\n"
+  puts "To choose a level: press c\n"
+  puts "          To stop: press q"
   charPressedInMenu
 end
 def charPressedInGame
@@ -59,16 +59,19 @@ def charPressedInGame
       #move left
     when "q"
       #quit
-      puts "Are you sure you would like to quit? y/n"
-      case(pressKey)
-        when "y"
-          #leave
-          menuScreen
-          @levelNo=1
-          return
+      puts "You are about to quit. To revert this, enter: n"
+      puts "Otherwise, press any key to continue..."
+      choiceInput = pressKey
+      choiceInput.downcase
+      case(choiceInput)
         when "n"
           #continue
           displayArray
+          return
+        else
+          #leave
+          @levelNo
+          menuScreen
           return
       end
       menuScreen
