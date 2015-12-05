@@ -2,9 +2,7 @@ require 'console_splash'
 require 'io/console'
 
 #declare variables and constants
-arrRowCount=0
-arrGame = Array[100][100]
-#set the default start level to 1
+@fileArr = []
 @levelNo=1
 
 #create the splash screen
@@ -41,9 +39,9 @@ end
 def menuScreen
   clearScreen
   puts "You are at the menu for Sokoban \n"
-  puts "    To quick play: press p\n"
-  puts "To choose a level: press c\n"
-  puts "          To stop: press q"
+  puts "To quick play:      Press p\n"
+  puts "To choose a level:  Press c\n"
+  puts "To stop:            Press q"
   charPressedInMenu
 end
 def charPressedInGame
@@ -101,7 +99,7 @@ def selectLevel
        else
        @levelNo = tempLevelNo
        #load onto array
-
+       loadArray
        #display array
        displayArray
        end
@@ -116,7 +114,10 @@ def charPressedInMenu
   char = pressKey
   case (char)
     when "p"
-      #play game
+      #load level of choice
+      loadArray
+
+      #displayArray
       displayArray
     when "q"
       #stop game
@@ -127,24 +128,34 @@ def charPressedInMenu
 
   end
 end
-#this is a method to load the game of choice onto the array
-def loadOntoArray
 
+
+#this is a method to load the game of choice onto the array
+def loadArray
+  clearScreen
+  #open the file and make each line an element
+  File.readlines("./levels/level#{@levelNo}.xsb").each do |line|
+      #initialize the subarray 'charArr'
+      charArr=[]
+      line.each_char do |char|
+        #push new element to the array subarray 'charArr'
+        charArr.push(char)
+      end
+      #add the sub array 'charArr' to the whole file array 'fileArr'
+      @fileArr.push(charArr)
+  end
 end
-#this is a method to load the game screen
+
+#this is a method to load the array to the game screen
 def displayArray
   clearScreen
-  #print out the first level
-  puts "\n"
-  arrayCount = 0
-  File.open("./levels/level#{@levelNo}.xsb", "r") do |f|
-    f.each_line do |line|
-      print line
-      line.split(""){|c| c.to_s}
-      arrayCount+=1
+  #Loop through each char in the array
+  @fileArr.each do |x|
+    x.each do |y|
+      print y
     end
   end
   charPressedInGame
-  end
+end
 #<-----------THE USER WILL BEGIN INTERACTING HERE---------->
 makeSplash
