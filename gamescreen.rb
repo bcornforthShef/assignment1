@@ -4,6 +4,8 @@ require 'io/console'
 #declare variables and constants
 @fileArr = []
 @levelNo=1
+@xCoordOfMan=0
+@yCoordOfMan=0
 
 #create the splash screen
 def makeSplash
@@ -51,10 +53,13 @@ def charPressedInGame
       #move down
     when "\e[B"
       #move up
+      @yCoordOfMan
     when "\e[C"
       #move right
     when "\e[D"
       #move left
+    when "l"
+      selectLevel
     when "q"
       #quit
       puts "You are about to quit. To revert this, enter: n"
@@ -80,7 +85,6 @@ def charPressedInGame
 
 end
 def selectLevel
-  clearScreen
   puts "Choose a level from 1 - 90:"
   input = gets.chomp()
   tempLevelNo = input.to_i
@@ -98,6 +102,7 @@ def selectLevel
          end
        else
        @levelNo = tempLevelNo
+       clearScreen
        #load onto array
        loadArray
        #display array
@@ -134,6 +139,7 @@ end
 def loadArray
   clearScreen
   #open the file and make each line an element
+  @fileArr = []
   File.readlines("./levels/level#{@levelNo}.xsb").each do |line|
       #initialize the subarray 'charArr'
       charArr=[]
@@ -149,12 +155,28 @@ end
 #this is a method to load the array to the game screen
 def displayArray
   clearScreen
+  lineCount=0
+  xCount=0
+  tempYInverse=0
+  @xCoordOfMan=0
+  @yCoordOfMan=0
   #Loop through each char in the array
-  @fileArr.each do |x|
-    x.each do |y|
-      print y
+  @fileArr.each do |y|
+    lineCount+=1
+    xCount=0
+    y.each do |x|
+      xCount+=1
+      print x
+      #find the man's coordinates
+      if x=="@"
+        tempYInverse=1-lineCount
+        @xCoordOfMan=xCount
+      end
     end
   end
+  #find y coordinates
+  @yCoordOfMan=lineCount+tempYInverse
+  puts "The man is situated at (#{@xCoordOfMan},#{@yCoordOfMan})"
   charPressedInGame
 end
 #<-----------THE USER WILL BEGIN INTERACTING HERE---------->
