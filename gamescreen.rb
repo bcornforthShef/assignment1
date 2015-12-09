@@ -2,10 +2,8 @@ require 'console_splash'
 require 'io/console'
 
 #declare variables and constants
-@fileArr = []
+@levelArr = []
 @levelNo=1
-@xCoordOfMan=0
-@yCoordOfMan=0
 
 #create the splash screen
 def makeSplash
@@ -47,17 +45,32 @@ def menuScreen
   charPressedInMenu
 end
 def charPressedInGame
+  manPosition=locateMan
   char = pressKey
+  #remember that the man is tracked by characters across, and characters down
+  #manPosition[0] is the x coordinate of the man, hence manPosition[1] is the y
   case (char)
     when "\e[A"
       #move down
+      newYCoord=manPosition[1]-1
+      checkMovement(manPosition[0]-1,manPosition[1],manPosition[0]-1,newYCoord)
+      displayArray
     when "\e[B"
       #move up
-      @yCoordOfMan
+      newYCoord=manPosition[1]+1
+      puts newYCoord
+      checkMovement(manPosition[0]-1,manPosition[1],manPosition[0]-1,newYCoord)
+      displayArray
     when "\e[C"
       #move right
+      newXCoord=manPosition[0]+1
+      checkMovement(manPosition[0]-1,manPosition[1],newXCoord-1,manPosition[1])
+      displayArray
     when "\e[D"
       #move left
+      newXCoord=manPosition[0]-1
+      checkMovement(manPosition[0]-1,manPosition[1],newXCoord-1,manPosition[1])
+      displayArray
     when "l"
       selectLevel
     when "q"
@@ -83,6 +96,25 @@ def charPressedInGame
       charPressedInGame
   end
 
+end
+#input the new x and y coordinates
+def checkMovement(oldX,oldY,proposedX,proposedY)
+  #initialize the value to return
+  proposedLocation=@levelArr[proposedY][proposedX]
+  print @levelArr[oldY][oldX]
+  case(proposedLocation)
+    when "#"
+      return
+    when "$"
+      moveBox(oldX,oldY,proposedX,proposedY)
+      moveMan(oldX,oldY,proposedX,proposedY)
+      return
+    when "."
+      return
+    else
+      #if man is allowed to move, run this
+      moveMan(oldX,oldY,proposedX,proposedY)
+  end
 end
 def selectLevel
   puts "Choose a level from 1 - 90:"
@@ -137,47 +169,60 @@ end
 
 #this is a method to load the game of choice onto the array
 def loadArray
-  clearScreen
-  #open the file and make each line an element
-  @fileArr = []
-  File.readlines("./levels/level#{@levelNo}.xsb").each do |line|
-      #initialize the subarray 'charArr'
-      charArr=[]
-      line.each_char do |char|
-        #push new element to the array subarray 'charArr'
-        charArr.push(char)
-      end
-      #add the sub array 'charArr' to the whole file array 'fileArr'
-      @fileArr.push(charArr)
-  end
-end
+    clearScreen
+    #open the file and make each line an element
+    @levelArr = []
+    lineCount=0
+    File.readlines("./levels/level#{@levelNo}.xsb").each do |line|
+      charCount=0
+      #initialise all y values
+      @levelArr[lineCount] ||=[]
+      charArr = line.split(/(?!^)/)
 
-#this is a method to load the array to the game screen
+      @levelArr.push(charArr)
+    end
+    puts
+    lineCount+=1
+end
+    #remove null values/representing spaces in ruby
+
+
+#this is a method to load the array to the game screen and locate the man
 def displayArray
   clearScreen
-  lineCount=0
-  xCount=0
-  tempYInverse=0
-  @xCoordOfMan=0
-  @yCoordOfMan=0
-  #Loop through each char in the array
-  @fileArr.each do |y|
-    lineCount+=1
-    xCount=0
+  #Loop through each char in the array and print
+  @levelArr.each do |y|
     y.each do |x|
-      xCount+=1
       print x
-      #find the man's coordinates
-      if x=="@"
-        tempYInverse=1-lineCount
-        @xCoordOfMan=xCount
-      end
     end
   end
-  #find y coordinates
-  @yCoordOfMan=lineCount+tempYInverse
-  puts "The man is situated at (#{@xCoordOfMan},#{@yCoordOfMan})"
+  manPosition = locateMan
+  puts "Player is located at #{manPosition[0]} across, and #{manPosition[1]} down"
   charPressedInGame
+end
+def moveMan(oldX,oldY,newX,newY)
+  @levelArr[oldY][oldX]=" "
+  @levelArr[newY][newX]="@"
+end
+def moveBox(oldX,oldY,newX,newY)
+  xDirection=newX-oldX
+  yDirection=newY-oldY
+  @levelArr[newY][newX]=" "
+  @levelArr[newY+yDirection][newX+xDirection]="$"
+end
+#creating an array for locateMan, where the 0th element is x across, and the 1st element is y down
+def locateMan
+  yDown=0
+  @levelArr.each do |y|
+    xAcross=1
+    y.each do |x|
+      if x =="@"
+        return xAcross,yDown
+      end
+      xAcross+=1
+    end
+    yDown+=1
+  end
 end
 #<-----------THE USER WILL BEGIN INTERACTING HERE---------->
 makeSplash
