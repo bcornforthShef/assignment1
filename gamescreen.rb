@@ -4,6 +4,8 @@ require 'io/console'
 #declare variables and constants
 @levelArr = []
 @levelNo=1
+#The below variables will be used when the man goes over a dot, which saves the location of the dot in an array
+@boxGoalCoord=[]
 
 #create the splash screen
 def makeSplash
@@ -13,10 +15,18 @@ def makeSplash
   splash.write_horizontal_pattern("/*")
   splash.write_vertical_pattern("/")
   splash.splash
-  if pressKey != ""
+  if pressKey != ''
     menuScreen
   end
 end
+
+#use this method to create a fresh canvas
+def clearScreen
+  puts "\e[H\e[2J"
+end
+
+
+#ALL CODE USED TO NAVIGATE THE GAME IS HERE
 #This method reads keypresses from the user including 2 and 3 escape character sequences.
 def pressKey
   STDIN.echo = false
@@ -31,18 +41,35 @@ ensure
   STDIN.cooked!
   return input
 end
-#use this method to create a fresh canvas
-def clearScreen
-  puts "\e[H\e[2J"
-end
 #create a menu method to open up upon being called
 def menuScreen
+  @levelNo=0
   clearScreen
   puts "You are at the menu for Sokoban \n"
   puts "To quick play:      Press p\n"
   puts "To choose a level:  Press c\n"
   puts "To stop:            Press q"
   charPressedInMenu
+end
+#this method will be run when the user presses a key on the keyboard
+def charPressedInMenu
+  char = pressKey
+  case (char)
+    when "p"
+      #load level of choice
+      loadArray
+
+      #displayArray
+      displayArray
+    when "q"
+      #stop game
+      exit
+    when "c"
+      #request level
+      selectLevel
+    else
+      menuScreen
+  end
 end
 def charPressedInGame
   manPosition=locateMan
@@ -58,7 +85,6 @@ def charPressedInGame
     when "\e[B"
       #move up
       newYCoord=manPosition[1]+1
-      puts newYCoord
       checkMovement(manPosition[0]-1,manPosition[1],manPosition[0]-1,newYCoord)
       displayArray
     when "\e[C"
@@ -71,22 +97,35 @@ def charPressedInGame
       newXCoord=manPosition[0]-1
       checkMovement(manPosition[0]-1,manPosition[1],newXCoord-1,manPosition[1])
       displayArray
-    when "l"
+    when 'h'
+      showHelp
+    when 'l'
       selectLevel
-    when "q"
+    when 'r'
+      #reset the level
+      puts "You are about to reset the level, to revert, enter: n"
+      puts "Otherwise, press any key to continue..."
+      input = pressKey
+      case(input)
+        when 'n'
+          loadArray
+          return
+        else
+          displayArray
+          return
+      end
+    when 'q'
       #quit
       puts "You are about to quit. To revert this, enter: n"
       puts "Otherwise, press any key to continue..."
       choiceInput = pressKey
-      choiceInput.downcase
       case(choiceInput)
-        when "n"
+        when 'n'
           #continue
           displayArray
           return
         else
           #leave
-          @levelNo
           menuScreen
           return
       end
@@ -97,25 +136,27 @@ def charPressedInGame
   end
 
 end
+
 #input the new x and y coordinates
-def checkMovement(oldX,oldY,proposedX,proposedY)
+def checkMovement(oldX,oldY,newX,newY)
   #initialize the value to return
-  proposedLocation=@levelArr[proposedY][proposedX]
-  print @levelArr[oldY][oldX]
+  proposedLocation=@levelArr[newY][newX]
   case(proposedLocation)
-    when "#"
+    when '#'
+      displayArray
+    when '$'
+      moveBox(oldX,oldY,newX,newY)
       return
-    when "$"
-      moveBox(oldX,oldY,proposedX,proposedY)
-      moveMan(oldX,oldY,proposedX,proposedY)
-      return
-    when "."
-      return
+    when '.'
+      moveMan(oldX,oldY,newX,newY)
     else
       #if man is allowed to move, run this
-      moveMan(oldX,oldY,proposedX,proposedY)
+      moveMan(oldX,oldY,newX,newY)
+      return
   end
 end
+
+#this code will run when the user wants to select a level
 def selectLevel
   puts "Choose a level from 1 - 90:"
   input = gets.chomp()
@@ -146,83 +187,132 @@ def selectLevel
   end
 end
 
-#this method will be run when the user makes an action
-def charPressedInMenu
-  char = pressKey
-  case (char)
-    when "p"
-      #load level of choice
-      loadArray
-
-      #displayArray
-      displayArray
-    when "q"
-      #stop game
-      exit
-    when "c"
-      #request level
-      selectLevel
-
-  end
-end
-
 
 #this is a method to load the game of choice onto the array
 def loadArray
     clearScreen
-    #open the file and make each line an element
-    @levelArr = []
+    @boxGoalCoord=[]
+    @levelArr=[]
+
     lineCount=0
+    #open the file and make each line an element in the 2d array @levelArr
     File.readlines("./levels/level#{@levelNo}.xsb").each do |line|
-      charCount=0
-      #initialise all y values
-      @levelArr[lineCount] ||=[]
-      charArr = line.split(/(?!^)/)
+      #initialize the subarray 'charArr'
+      charArr=[]
 
+      xCount=1
+      line.each_char do |char|
+        #push new element to the array subarray 'charArr'
+        if char=='.'
+          @boxGoalCoord.push("#{xCount},#{lineCount}")
+        end
+        charArr.push(char)
+        xCount+=1
+      end
+      #add the sub array 'charArr' to the whole file array 'fileArr'
       @levelArr.push(charArr)
+      lineCount+=1
     end
-    puts
-    lineCount+=1
 end
-    #remove null values/representing spaces in ruby
 
-
-#this is a method to load the array to the game screen and locate the man
+#this is a method to load the array to the game screen and show the player's location
 def displayArray
+  checkIfComplete
   clearScreen
-  #Loop through each char in the array and print
   @levelArr.each do |y|
     y.each do |x|
       print x
     end
   end
   manPosition = locateMan
-  puts "Player is located at #{manPosition[0]} across, and #{manPosition[1]} down"
+  puts "Press 'h' for help:"
   charPressedInGame
 end
-def moveMan(oldX,oldY,newX,newY)
-  @levelArr[oldY][oldX]=" "
-  @levelArr[newY][newX]="@"
+
+
+def showHelp
+  puts "To reset the level, press 'r'"
+  puts "To select a new level, press 'l'"
+  puts "To quit to menu, press 'q'"
+  charPressedInGame
 end
+#this method will move the man from the current (old) coordinates to the next coordinates (new)
+def moveMan(oldX,oldY,newX,newY)
+  @levelArr[newY][newX]='@'
+  @levelArr[oldY][oldX]=' '
+  #replace the box goals if they were overwritten by the above lines of code
+  replenishBoxGoals
+end
+
+#this will determine if the box is allowed to be moved,
+#which will ultimately determine if the player is allowed to move
 def moveBox(oldX,oldY,newX,newY)
   xDirection=newX-oldX
   yDirection=newY-oldY
-  @levelArr[newY][newX]=" "
-  @levelArr[newY+yDirection][newX+xDirection]="$"
+  proposedBoxPos=@levelArr[newY+yDirection][newX+xDirection]
+  case(proposedBoxPos)
+    when ' ','.'
+      #this will run when the next possible position of the box is a blank space(' ') or is a box goal ('.')
+      @levelArr[newY][newX]=' '
+      @levelArr[newY+yDirection][newX+xDirection]='$'
+      moveMan(oldX,oldY,newX,newY)
+    else
+      #otherwise, abort the process
+      return
+  end
+  replenishBoxGoals
 end
+#this will reload the '.' if it has been overwritten by the player '@' or the box '$'
+def replenishBoxGoals
+  @boxGoalCoord.each do |coords|
+    goalLocation=coords.split(/,/)
+    x=goalLocation[0].to_i-1
+    y=goalLocation[1].to_i
+    if @levelArr[y][x]==' '
+      @levelArr[y][x]='.'
+    end
+  end
+end
+
 #creating an array for locateMan, where the 0th element is x across, and the 1st element is y down
 def locateMan
   yDown=0
   @levelArr.each do |y|
-    xAcross=1
+    xCount=1
     y.each do |x|
-      if x =="@"
-        return xAcross,yDown
+      if x == '@'
+        return xCount,yDown
       end
-      xAcross+=1
+      xCount+=1
     end
     yDown+=1
   end
 end
-#<-----------THE USER WILL BEGIN INTERACTING HERE---------->
+def checkIfComplete
+  finished=true
+  @boxGoalCoord.each do |coords|
+    goalLocation=coords.split(/,/)
+    x=goalLocation[0].to_i-1
+    y=goalLocation[1].to_i
+    if @levelArr[y][x]!='$'
+      finished=false
+    end
+  end
+  if finished
+    puts "LEVEL COMPLETE!... "
+    puts "To go back to the menu, press q, to select level, press l."
+    puts "Otherwise, to go the next level, press any other key:"
+    case(pressKey)
+      when 'q'
+        menuScreen
+      when 'l'
+        selectLevel
+      else
+        @levelNo+=1
+        loadArray
+    end
+  end
+
+end
+#<-----------THE PROGRAM WILL BEGIN HERE---------->
 makeSplash
