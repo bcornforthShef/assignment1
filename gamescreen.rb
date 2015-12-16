@@ -11,9 +11,9 @@ require 'io/console'
 def makeSplash
   clearScreen
   splash = ConsoleSplash.new(15,70)
-  splash.write_header("Welcome to Sokoban","Ben Cornforth","Alpha Build, November 2015")
-  splash.write_horizontal_pattern("/*")
-  splash.write_vertical_pattern("/")
+  splash.write_header("Welcome to Sokoban","Ben Cornforth","Alpha Build, November 2015",{:nameFg=>:green,:authorFg=>:green, :versionFg=>:green, :bg=>:black})
+  splash.write_horizontal_pattern("/*",{:fg=>:white, :bg=>:black})
+  splash.write_vertical_pattern("/",{:fg=>:orange, :bg=>:black})
   splash.splash
   if pressKey != ''
     menuScreen
@@ -43,12 +43,12 @@ ensure
 end
 #create a menu method to open up upon being called
 def menuScreen
-  @levelNo=0
+  @levelNo=1
   clearScreen
-  puts "You are at the menu for Sokoban \n"
-  puts "To quick play:      Press p\n"
-  puts "To choose a level:  Press c\n"
-  puts "To stop:            Press q"
+  puts "You are at the menu for Sokoban"
+  puts "To quick play:      Press 'p'"
+  puts "To choose a level:  Press 'c'"
+  puts "To stop:            Press 'q'"
   charPressedInMenu
 end
 #this method will be run when the user presses a key on the keyboard
@@ -58,7 +58,6 @@ def charPressedInMenu
     when "p"
       #load level of choice
       loadArray
-
       #displayArray
       displayArray
     when "q"
@@ -108,10 +107,10 @@ def charPressedInGame
       input = pressKey
       case(input)
         when 'n'
-          loadArray
+          displayArray
           return
         else
-          displayArray
+          loadArray
           return
       end
     when 'q'
@@ -221,7 +220,14 @@ def displayArray
   clearScreen
   @levelArr.each do |y|
     y.each do |x|
-      print x
+      case(x)
+        when '@'
+          print x.colorize(:color => :orange)
+        when '#'
+          print x.colorize(:background => :gray)
+        else
+          print x
+      end
     end
   end
   manPosition = locateMan
